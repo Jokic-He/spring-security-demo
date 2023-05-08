@@ -1,5 +1,6 @@
 package com.hpy.oauthtest.domain;
 
+import lombok.Builder;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +13,7 @@ import java.util.Collection;
  * @CreateTime: 2023-05-06
  */
 @Data
+@Builder
 public class SysUser implements UserDetails, Serializable {
 
     private Integer id;
@@ -20,11 +22,13 @@ public class SysUser implements UserDetails, Serializable {
 
     private String password;
 
+    private Collection<? extends GrantedAuthority> authorities;
+
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return this.authorities;
     }
 
     @Override

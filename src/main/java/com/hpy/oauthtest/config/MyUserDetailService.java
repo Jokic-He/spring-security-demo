@@ -1,6 +1,7 @@
 package com.hpy.oauthtest.config;
 
 import com.hpy.oauthtest.domain.SysUser;
+import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.TestingAuthenticationToken;
