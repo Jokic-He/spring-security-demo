@@ -2,6 +2,10 @@ package com.hpy.oauthtest.config;
 
 import cn.hutool.core.util.StrUtil;
 import com.hpy.oauthtest.domain.SysUser;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,15 +15,10 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 
 /**
- * jwt验证token
+ * token校验过滤器，校验通过后将用户保存在上下文中
  *
  * @Author: hepy
  * @CreateTime: 2023-05-08
@@ -56,12 +55,21 @@ public class JwtFilter extends OncePerRequestFilter {
             SysUser sysUser = (SysUser) myUserDetailService.loadUserByUsername(username);
             //TODO 校验token准确性和是否过期
             boolean isTokenValid = false;
-            if (jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
+            if (sysUser!=null && jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
+                /**
+                 * 封装成用户的凭证，传入用户实体类和用户的权限集合，spring security会自动去判断是否拥有权限
+                 */
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         sysUser,
                         null,
                         sysUser.getAuthorities()
                 );
+                /**
+                 * 在 Spring Security 中，当用户进行认证时，会先通过 AuthenticationFilter 进行请求过滤，
+                 * 然后调用 AuthenticationManager 进行认证。在认证过程中，Spring Security 会自动创建一个
+                 * Authentication 对象，其中包含了认证请求的相关信息。如果你需要自定义 Authentication
+                 * 对象的详细信息，就可以使用 WebAuthenticationDetailsSource 来创建 WebAuthenticationDetails 对象。
+                 */
                 authToken.setDetails(
                         new WebAuthenticationDetailsSource().buildDetails(req)
                 );

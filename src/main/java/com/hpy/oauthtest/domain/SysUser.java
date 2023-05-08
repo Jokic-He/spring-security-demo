@@ -1,7 +1,10 @@
 package com.hpy.oauthtest.domain;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -13,7 +16,9 @@ import java.util.Collection;
  * @CreateTime: 2023-05-06
  */
 @Data
-@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Accessors(chain = true)
 public class SysUser implements UserDetails, Serializable {
 
     private Integer id;
