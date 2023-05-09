@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 public class MyUserDetailService implements UserDetailsService, UserDetailsPasswordService {
 
 
-    public static SysUser getCurrentUser() {
-        return (SysUser) SecurityContextHolder.getContext().getAuthentication();
+    public static Authentication getCurrentUser() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 
 

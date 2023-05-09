@@ -2,10 +2,7 @@ package com.hpy.oauthtest.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.hpy.oauthtest.config.JwtService;
-import com.hpy.oauthtest.domain.AjaxResult;
-import com.hpy.oauthtest.domain.SysUser;
-import com.hpy.oauthtest.domain.TokenResponse;
-import com.hpy.oauthtest.domain.UserDO;
+import com.hpy.oauthtest.domain.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +42,7 @@ public class UserServiceImpl implements UserService {
             var sysUser = new SysUser().setId(1).setPassword(userDO.getPassword()).setUsername(username).setAuthorities(permissions);
             var accssToken = jwtService.generateToken(sysUser);
             var refreshToken = jwtService.generateRefreshToken(sysUser);
+            new TokenDO().setToken(accssToken).setUserId(userDO.getId()).setRevoked(false).setExpired(false).insert();
             //返回生成的两个token
             return AjaxResult.success(TokenResponse.builder().accessToken(accssToken).refreshToken(refreshToken).build());
         }

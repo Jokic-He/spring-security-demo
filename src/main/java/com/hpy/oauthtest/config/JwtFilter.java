@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +26,7 @@ import java.io.IOException;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final MyUserDetailService myUserDetailService;
@@ -42,19 +44,24 @@ public class JwtFilter extends OncePerRequestFilter {
         //从header中获取token
         final String authHeader = req.getHeader("Authorization");
         final String jwt;
-        final String username;
+        String username=null;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            res.setContentType("text/html;charset=utf-8");
             res.getWriter().write("访问该资源请先授权");
             return;
         }
         //截取有效的token字符串
         jwt = authHeader.substring(7);
         //解析jwt获取用户名
-        username = jwtService.extractUsername(jwt);
+        try {
+            username = jwtService.extractUsername(jwt);
+        }catch (Exception e){
+            log.error("token格式异常:{}",e);
+        }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             SysUser sysUser = (SysUser) myUserDetailService.loadUserByUsername(username);
             //TODO 校验token准确性和是否过期
-            boolean isTokenValid = false;
+            boolean isTokenValid = true;
             if (sysUser!=null && jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
                 /**
                  * 封装成用户的凭证，传入用户实体类和用户的权限集合，spring security会自动去判断是否拥有权限
