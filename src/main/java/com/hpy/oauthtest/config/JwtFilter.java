@@ -1,13 +1,18 @@
 package com.hpy.oauthtest.config;
 
 import cn.hutool.core.util.StrUtil;
+import com.hpy.oauthtest.OauthTestApplication;
 import com.hpy.oauthtest.domain.SysUser;
+import com.hpy.oauthtest.exception.NoTokenException;
+import com.hpy.oauthtest.exception.TokenVerifyErrorException;
+import com.hpy.oauthtest.exception.UnAuthorizationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,8 +38,10 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
+    private final RedisTemplate redisTemplate;
+
     @Override
-    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException, TokenVerifyErrorException, NoTokenException {
 
         //如果是登录接口就自动放行
         if (req.getServletPath().contains("/api/v1/auth")) {
@@ -44,25 +51,26 @@ public class JwtFilter extends OncePerRequestFilter {
         //从header中获取token
         final String authHeader = req.getHeader("Authorization");
         final String jwt;
-        String username=null;
+        String username = null;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            res.setContentType("text/html;charset=utf-8");
-            res.getWriter().write("访问该资源请先授权");
-            return;
+            throw new NoTokenException();
         }
         //截取有效的token字符串
         jwt = authHeader.substring(7);
         //解析jwt获取用户名
         try {
             username = jwtService.extractUsername(jwt);
-        }catch (Exception e){
-            log.error("token格式异常:{}",e);
+        } catch (Exception e) {
+            log.error("token格式异常:{}", e);
+            throw new TokenVerifyErrorException();
         }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             SysUser sysUser = (SysUser) myUserDetailService.loadUserByUsername(username);
-            //TODO 校验token准确性和是否过期
             boolean isTokenValid = true;
-            if (sysUser!=null && jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
+            //TODO 校验token准确性和是否过期，此处可以自定义校验，可以使用jwt自带的校验也可以通过数据库和redis等共同判断
+            String userInfo= (String) redisTemplate.opsForValue().get(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,jwt));
+            if(StrUtil.isNotBlank(userInfo))isTokenValid=false;
+            if (sysUser != null && jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
                 /**
                  * 封装成用户的凭证，传入用户实体类和用户的权限集合，spring security会自动去判断是否拥有权限
                  */
@@ -87,5 +95,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(req, res);
     }
+
+
 }
 

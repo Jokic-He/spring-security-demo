@@ -1,9 +1,14 @@
 package com.hpy.oauthtest.service;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.hpy.oauthtest.OauthTestApplication;
 import com.hpy.oauthtest.config.JwtService;
 import com.hpy.oauthtest.domain.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,6 +25,10 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     private final JwtService jwtService;
+
+    private final RedisTemplate redisTemplate;
+
+    private final int tokenTimeOut=60*1000;
 
 
     /**
@@ -42,7 +51,11 @@ public class UserServiceImpl implements UserService {
             var sysUser = new SysUser().setId(1).setPassword(userDO.getPassword()).setUsername(username).setAuthorities(permissions);
             var accssToken = jwtService.generateToken(sysUser);
             var refreshToken = jwtService.generateRefreshToken(sysUser);
+            //此处有两个选择，可以把token存到db或者redis中，这里方便演示两个都保存
             new TokenDO().setToken(accssToken).setUserId(userDO.getId()).setRevoked(false).setExpired(false).insert();
+            //可以配合jwt设置一个超时时间双重判断是否过期，也可以作为手动使token失效的功能
+            redisTemplate.opsForValue().set(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,accssToken), JSONUtil.toJsonStr(sysUser));
+
             //返回生成的两个token
             return AjaxResult.success(TokenResponse.builder().accessToken(accssToken).refreshToken(refreshToken).build());
         }
