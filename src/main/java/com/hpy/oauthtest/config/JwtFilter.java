@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,7 +39,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
-    private final RedisTemplate redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain filterChain) throws ServletException, IOException, TokenVerifyErrorException, NoTokenException {
@@ -66,10 +67,10 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             SysUser sysUser = (SysUser) myUserDetailService.loadUserByUsername(username);
-            boolean isTokenValid = true;
-            //TODO 校验token准确性和是否过期，此处可以自定义校验，可以使用jwt自带的校验也可以通过数据库和redis等共同判断
-            String userInfo= (String) redisTemplate.opsForValue().get(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,jwt));
-            if(StrUtil.isNotBlank(userInfo))isTokenValid=false;
+            boolean isTokenValid = false;
+            //校验token准确性和是否过期，此处可以自定义校验，可以使用jwt自带的校验也可以通过数据库和redis等共同判断
+            String userInfo= (String) stringRedisTemplate.opsForValue().get(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,jwt));
+            if(StrUtil.isNotBlank(userInfo))isTokenValid=true;
             if (sysUser != null && jwtService.isTokenValid(jwt, sysUser) && isTokenValid) {
                 /**
                  * 封装成用户的凭证，传入用户实体类和用户的权限集合，spring security会自动去判断是否拥有权限

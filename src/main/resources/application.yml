@@ -33,7 +33,7 @@ application:
 
   # mybatis
   mybatis-plus:
-    mapper-locations: classpath:mybatis/**/*Mapper.xml
+    mapper-locations: classpath:mybatis/**/*Mapper.xmlre
     typeAliasesPackage: com.hpy.oauthtest.domain
     #typeEnumsPackage: org.springblade.dashboard.entity.enums
     global-config:

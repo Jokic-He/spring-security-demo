@@ -9,6 +9,7 @@ import com.hpy.oauthtest.config.JwtService;
 import com.hpy.oauthtest.domain.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class UserServiceImpl implements UserService {
 
     private final JwtService jwtService;
 
-    private final RedisTemplate redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     private final int tokenTimeOut=60*1000;
 
@@ -54,7 +55,7 @@ public class UserServiceImpl implements UserService {
             //此处有两个选择，可以把token存到db或者redis中，这里方便演示两个都保存
             new TokenDO().setToken(accssToken).setUserId(userDO.getId()).setRevoked(false).setExpired(false).insert();
             //可以配合jwt设置一个超时时间双重判断是否过期，也可以作为手动使token失效的功能
-            redisTemplate.opsForValue().set(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,accssToken), JSONUtil.toJsonStr(sysUser));
+            stringRedisTemplate.opsForValue().set(StrUtil.format(OauthTestApplication.REDIS_TOKEN_KEY,accssToken), JSONUtil.toJsonStr(sysUser));
 
             //返回生成的两个token
             return AjaxResult.success(TokenResponse.builder().accessToken(accssToken).refreshToken(refreshToken).build());
