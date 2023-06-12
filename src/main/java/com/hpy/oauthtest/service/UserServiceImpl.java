@@ -46,10 +46,8 @@ public class UserServiceImpl implements UserService {
         //不校验用户是否被删除或者禁用
         //校验密码是否正确
         if (passwordEncoder.matches(password, userDO.getPassword())) {
-            //用户校验成功，从数据库中查询出用户的权限，现在直接写死
-            Set<SimpleGrantedAuthority> permissions = Set.of("admin:read", "admin:create", "admin:update", "admin:delete").stream().map(permission -> new SimpleGrantedAuthority(permission)).collect(Collectors.toSet());
             //生成用户的token
-            var sysUser = new SysUser().setId(1).setPassword(userDO.getPassword()).setUsername(username).setAuthorities(permissions);
+            var sysUser = new SysUser().setId(1).setPassword(userDO.getPassword()).setUsername(username);
             var accssToken = jwtService.generateToken(sysUser);
             var refreshToken = jwtService.generateRefreshToken(sysUser);
             //此处有两个选择，可以把token存到db或者redis中，这里方便演示两个都保存
