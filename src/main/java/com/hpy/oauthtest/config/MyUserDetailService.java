@@ -47,9 +47,9 @@ public class MyUserDetailService implements UserDetailsService, UserDetailsPassw
         log.info("进入查找用户的方法");
         UserDO userDO = new UserDO().selectOne(new LambdaQueryWrapper<UserDO>().eq(UserDO::getUsername, username));
         if (userDO != null) {
-            //从数据库中获取用户，
+            //从数据库中获取用户，真实环境需要从数据库中查找出该用户拥有的权限
             Set<SimpleGrantedAuthority> permissions = Set.of("admin:read", "admin:create", "admin:update", "admin:delete").stream().map(permission -> new SimpleGrantedAuthority(permission)).collect(Collectors.toSet());
-            //生成用户的token
+            //返回用户
             var sysUser = new SysUser().setId(1).setPassword(userDO.getPassword()).setUsername(username).setAuthorities(permissions);
             return sysUser;
         }
